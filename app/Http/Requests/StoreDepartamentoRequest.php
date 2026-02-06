@@ -8,6 +8,8 @@ class StoreDepartamentoRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     * 
+     * La autorización se maneja en el controlador mediante DepartamentoPolicy.
      */
     public function authorize(): bool
     {

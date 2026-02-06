@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Empresa;
 
 class Centro extends Model
 {
@@ -14,4 +15,15 @@ class Centro extends Model
     'municipio',
 
     ];
+
+        //Relacion uno a muchos: un centro puede tener multiples usuarios.
+    public function empresa()
+    {
+        return $this->belongsTo(Empresa::class);
+    }
+
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 }

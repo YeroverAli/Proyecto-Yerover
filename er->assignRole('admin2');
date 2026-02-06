@@ -1,0 +1,17 @@
+[90m= [39m[34;4mApp\Models\User[39;24m {#6245
+    [34mid[39m: [35m3[39m,
+    [34mnombre[39m: "[32mYerover222[39m",
+    [34mapellidos[39m: "[32mAli[39m",
+    [34mempresa_id[39m: [35m2[39m,
+    [34mdepartamento_id[39m: [35m3[39m,
+    [34mcentro_id[39m: [35m1[39m,
+    [34memail[39m: "[32myerover@gmail.com[39m",
+    [34mtelefono[39m: "[32m85473759[39m",
+    [34mextension[39m: "[32mhhooooo[39m",
+    #[33mpassword[39m: "[32m$2y$12$q0Ptuusijl/Rcg1nEAyB0.o9X9.X9Yq9YGDhSSitjLKJvXYEKRxMC[39m",
+    [34memail_verified_at[39m: [36mnull[39m,
+    #[33mremember_token[39m: "[32m42AJ2eg2wiSopGCK4Zh3VMW3bkUOIwCUL0Z7Chmuvghg6ZpFpCztX3Se9DgF[39m",
+    [34mcreated_at[39m: "[32m2026-01-28 11:39:50[39m",
+    [34mupdated_at[39m: "[32m2026-01-30 13:32:30[39m",
+  }
+

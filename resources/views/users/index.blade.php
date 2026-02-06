@@ -1,6 +1,19 @@
 @extends('layouts.app')
 
 @section('content')
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
 <div class="container">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -22,66 +35,67 @@
     </form>
 
     {{-- Tabla de usuarios --}}
-    <table class="table table-bordered w-auto mx-auto">
+    <table class="table table-bordered w-100">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Apellidos</th>
-                <th>Empresa</th>
-                <th>Departamento</th>
-                <th>Centro</th>
-                <th>Email</th>
-                <th>Teléfono</th>
-                <th>Extensión</th>
-                @can('create', App\Models\User::class)
-                <th>Acciones</th>
-                @endcan
+                <th class="text-center">ID</th>
+                <th class="text-center">Nombre</th>
+                <th class="text-center">Apellidos</th>
+                <th class="text-center">Empresa</th>
+                <th class="text-center">Departamento</th>
+                <th class="text-center">Centro</th>
+                <th class="text-center">Email</th>
+                <th class="text-center">Teléfono</th>
+                <th class="text-center">Extensión</th>
+                @if(auth()->user()->hasPermissionTo('editar usuarios') || auth()->user()->hasPermissionTo('eliminar usuarios' || auth()->user()->hasPermissionTo('ver usuarios')))
+                <th class="text-center">Acciones</th>
+                @endif
             </tr>
         </thead>
         <tbody>
             @forelse ($users as $user)
                 <tr>
-                    <td>{{ $user->id }}</td>
-                    <td>{{ $user->nombre }}</td>
-                    <td>{{ $user->apellidos }}</td>
-                    <td>{{ $user->empresa_id }}</td> {{-- Se debería mostrar el nombre de la empresa --}}
-                    <td>{{ $user->departamento_id }}</td> {{-- Se debería mostrar el nombre del departamento --}}
-                    <td>{{ $user->centro_id }}</td> {{-- Se debería mostrar el nombre del centro --}}
-                    <td>{{ $user->email }}</td>
-                    <td>{{ $user->telefono }}</td>
-                    <td>{{ $user->extension }}</td>
-                    @can('update', $user)
-                    <td>
-                            <a href="{{ route('users.edit', $user) }}"
-                               class="btn btn-sm btn-warning">
+                    <td class="text-center">{{ $user->id }}</td>
+                    <td class="text-center">{{ $user->nombre }}</td>
+                    <td class="text-center">{{ $user->apellidos }}</td>
+                    <td class="text-center">{{ $user->empresa->nombre ?? 'N/A'  }}</td>
+                    <td class="text-center">{{ $user->departamento->nombre ?? 'N/A' }}</td>
+                    <td class="text-center">{{ $user->centro->nombre ?? 'N/A' }}</td>
+                    <td class="text-center">{{ $user->email }}</td>
+                    <td class="text-center">{{ $user->telefono }}</td>
+                    <td class="text-center">{{ $user->extension }}</td>
+                    @if(auth()->user()->can('update', $user) || auth()->user()->can('delete', $user))
+                    <td class="text-center">
+                        <a href="{{ route('users.show', $user) }}" class="btn btn-sm btn-info">
+                            Ver
+                        </a>
+                        @can('update', $user)
+                            <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-warning">
                                 Editar
                             </a>
                         @endcan
-            
                         @can('delete', $user)
-                            <form action="{{ route('users.destroy', $user) }}"
-                                  method="POST"
-                                  class="d-inline">
+                            <form action="{{ route('users.destroy', $user) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('DELETE')
-                                <button class="btn btn-sm btn-danger">
-                                    Eliminar
-                                </button>
+                                <button class="btn btn-sm btn-danger">Eliminar</button>
                             </form>
                         @endcan
                     </td>
+                    @endif
                 </tr>
             @empty
                 <tr>
-                    <td colspan="4">No hay usuarios</td>
+                    <td colspan="10" class="text-center">No hay usuarios</td>
                 </tr>
             @endforelse
             </tbody>
     </table>
 
-    {{-- Paginación --}}
-    {{ $users->withQueryString()->links() }}
+     {{-- Paginación --}}
+    <div class="d-flex justify-content-center mt-4">
+        {{ $users->withQueryString()->links() }}
+    </div>
 
 </div>
 @endsection

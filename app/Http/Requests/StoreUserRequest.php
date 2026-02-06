@@ -8,6 +8,8 @@ class StoreUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     * 
+     * La autorización se maneja en el controlador mediante UserPolicy.
      */
     public function authorize(): bool
     {

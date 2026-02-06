@@ -8,6 +8,7 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Models\Empresa;
+use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
 use App\Models\Departamento;
 use App\Models\Centro;
@@ -28,12 +29,35 @@ class UserController extends Controller
     {
         $this->authorize('viewAny', User::class);
 
-        $users = $request->filled('search')
+        $query = $request->filled('search')
              ? $this->users->search($request->search)
              : $this->users->all();
+
+            // Si search devuelve un paginator, usa with(), si no, carga las relaciones manualmente
+             if(method_exists($query, 'with'))
+             {
+                $users = $query->with(['empresa', 'departamento', 'centro']);
+             } else {
+            // Si all() devuelve una collection, necesitarás modificar el repository
+                $users = $query;
+             }
+
         return view('users.index', compact('users'));
     }
 
+    /**
+     * Display the specified resource.
+     */
+    public function show(User $user)
+    {
+        $this->authorize('view', $user);
+
+        // Cargar relaciones necesarias
+        $user->load(['empresa', 'departamento', 'centro', 'roles']);
+
+        return view('users.show', compact('user'));
+    }
+    
     /**
      * Show the form for creating a new resource.
      */
@@ -41,6 +65,7 @@ class UserController extends Controller
     {
         $this->authorize('create', User::class);
 
+        // Recopila todos los usuarios
         $empresas = Empresa::all();
         $departamentos = Departamento::all();
         $centros = Centro::all();
@@ -50,28 +75,38 @@ class UserController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Valida los datos recibidos y crea y Almacena el usuario en la base de datos y redirige a la vista users.index
      */
     public function store(StoreUserRequest $request)
     {
         $this->authorize('create', User::class);
 
-        $this->users->create($request->validated());
+        try {
 
-        return redirect()->route('users.index')
-            ->with('success', 'Usuario creado correctamente');
+            $this->users->create($request->validated());
+
+            Log::info('Usuario creado correctamente', ['nombre' => $request->validated()['nombre'], 'email' => $request->validated()['email']]);
+
+            return redirect()->route('users.index')->with('success', 'Usuario creado correctamente');
+        }
+
+        catch(\Illuminate\Database\QueryException $e){
+
+            Log::error('Error al crear usuario (DB)', ['error' => $e->getMessage(), 'data' => $request->validated()]);
+
+            return redirect()->back()->withInput()->with('error', 'Error al crear el usuario. Por favor, inténtelo de nuevo');
+        }
+
+        catch(\Exception $e){
+
+            Log::error('Error inesperado al crear usuario', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return redirect()->back()->withInput()->with('error', 'Ha ocurrido un error inesperado. Por favor, contacta con un administrador.');
+        }
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
+     * Recibe todos los datos de empresa, departamento, centro y rol para luego mostrar en la vista el nombre. Redirige a la vista edit con las variables de user, empresas...
      */
     public function edit(User $user)
     {
@@ -86,26 +121,71 @@ class UserController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Actualiza los datos en la Base de datos a la vez que los valida para confirmar que esté todo correcto y redirige a la vista index
      */
     public function update(UpdateUserRequest $request, User $user)
     {
+        $this->authorize('update', $user);
 
-        $this->users->update($user->id, $request->validated());
+        try{
+        
+            $this->users->update($user->id, $request->validated());
 
-        return redirect()->route('users.index')
-            ->with('success', 'Usuario actualizado correctamente');
+            Log::info('Usuario actualizado correctamente', ['user_id' => $user->id, 'nombre' => $request->validated()['nombre'], 'email' => $request->validated()['email']]);
+            return redirect()->route('users.index')->with('success', 'Usuario actualizado correctamente');
+
+        }
+        
+        catch(\Illuminate\Database\QueryException $e){
+            
+            Log::error('Error al actualizar usuario (DB)', ['error' => $e->getMessage(), 'data' => $request->validated()]);
+
+            return redirect()->back()->withInput()->with('error', 'Error al actualizar usuario. Por favor, inténtelo de nuevo');
+        }
+
+        catch(\Exception $e) {
+
+            Log::error('Error inesperado al actualizar usuario', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return redirect()->back()->withInput()->with('error', 'Ha ocurrido un error inesperado. Por favor, contacta con un administrador');
+        }
+
+
+
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Elimina el usuario correspondiend seleccionado y redirige a la vista index.
      */
     public function destroy(User $user)
     {
         $this->authorize('delete', $user);
 
-        $this->users->delete($user->id);
+        try{
+        
+            // Guardar datos antes de eliminar (para el log)
+            $nombreUsuario = $user->nombre;
+            $emailUsuario = $user->email;
+            $idUsuario = $user->id;
 
-        return redirect()->route('users.index');
+            $this->users->delete($user->id);
+
+            Log::info('Usuario eliminado correctamente', ['user_id' => $idUsuario, 'nombre' => $nombreUsuario, 'email' => $emailUsuario]);
+
+            return redirect()->route('users.index')->with('success', 'Usuario eliminado correctamente');
+        }
+
+        catch(\Illuminate\Database\QueryException $e){
+            Log::error('Error al eliminar usuario (DB)', ['error' => $e->getMessage(), 'user_id' => $user->id, 'nombre' => $user->nombre]);
+
+            return redirect()->back()->with('error', 'Error al eliminar usuario. Por favor, inténtalo de nuevo');
+        }
+
+        catch(\Exception $e){
+
+            Log::error('Error inesperado al eliminar usuario.', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            return redirect()->back()->with('error', 'Ha ocurrido un error inesperado. Por favor, contacta con un administrador.');
+        }
     }
 }

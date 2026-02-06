@@ -40,21 +40,66 @@
             </div>
         @endcan
 
-        {{-- EJEMPLOS FUTUROS --}}
-        {{-- 
+        @can('viewAny', App\Models\Centro::class)
         <div class="col-md-4 mb-3">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Productos</h5>
-                    <p class="card-text">CRUD de productos</p>
-                    <a href="{{ route('products.index') }}" class="btn btn-primary">
+                    <h5 class="card-title">Centros</h5>
+                    <p class="card-text">
+                        Gestión y visualización de los distintos centros de la empresa.
+                    </p>
+                    <a href="{{ route('centros.index') }}" class="btn btn-primary">
                         Ir al listado
                     </a>
                 </div>
             </div>
         </div>
-        --}}
-
+    @endcan
+    @if(auth()->user()->hasPermissionTo('ver roles'))
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Roles</h5>
+                <p class="card-text">
+                    Gestión y visualización de los distintos roles de usuario.
+                </p>
+                <a href="{{ route('roles.index') }}" class="btn btn-primary">
+                    Ir al listado
+                </a>
+            </div>
+        </div>
+    </div>
+@endif
+    @can('viewAny', App\Models\Cliente::class)
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Clientes</h5>
+                <p class="card-text">
+                    Gestión y visualización de los clientes.
+                </p>
+                <a href="{{ route('clientes.index') }}" class="btn btn-primary">
+                    Ir al listado
+                </a>
+            </div>
+        </div>
+    </div>
+    @endcan
+    @can('viewAny', App\Models\Vehiculo::class)
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Vehiculos</h5>
+                <p class="card-text">
+                    Gestión y visualización de los vehiculos.
+                </p>
+                <a href="{{ route('vehiculos.index') }}" class="btn btn-primary">
+                    Ir al listado
+                </a>
+            </div>
+        </div>
+    </div>
+    @endcan
     </div>
 
 </div>
