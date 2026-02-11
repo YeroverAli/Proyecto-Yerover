@@ -13,26 +13,27 @@ use App\Http\Controllers\VehiculoController;
 
 
 /*
-|--------------------------------------------------------------------------
-| Rutas públicas (SIN autenticación)
-|--------------------------------------------------------------------------
-*/
+ |--------------------------------------------------------------------------
+ | Rutas públicas (SIN autenticación)
+ |--------------------------------------------------------------------------
+ */
 Auth::routes();
 Route::get('/register', [RegisterController::class, 'show'])->name('register');
 Route::post('/register', [RegisterController::class, 'store']);
 
 /*
-|--------------------------------------------------------------------------
-| Rutas protegidas (CON autenticación)
-|--------------------------------------------------------------------------
-*/
+ |--------------------------------------------------------------------------
+ | Rutas protegidas (CON autenticación)
+ |--------------------------------------------------------------------------
+ */
 Route::middleware(['auth'])->group(function () {
-    
+
     // Usuarios registrados pueden entrar a estas vistas
     Route::get('/', function () {
         return view('welcome');
-    })->name('welcome');
-    
+    }
+    )->name('welcome');
+
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
     //Crud users
@@ -45,7 +46,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
-    
+
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
     //Crud departamentos
@@ -72,7 +73,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('centros/{centro}/edit', [CentroController::class, 'edit'])->name('centro.edit');
     Route::put('/centros/{centro}', [CentroController::class, 'update'])->name('centros.update');
 
-    Route::delete('/centros/{centro}', [CentroController::class, 'destroy'])-> name('centros.destroy');
+    Route::delete('/centros/{centro}', [CentroController::class, 'destroy'])->name('centros.destroy');
 
     //Crud clientes
     Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
@@ -92,6 +93,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/vehiculos/create', [VehiculoController::class, 'create'])->name('vehiculos.create');
     Route::post('/vehiculos', [VehiculoController::class, 'store'])->name('vehiculos.store');
+    Route::get('/vehiculos/export', [VehiculoController::class, 'export'])->name('vehiculos.export');
+    Route::get('/vehiculos/pdf', [VehiculoController::class, 'exportPdf'])->name('vehiculos.pdf');
 
     Route::get('/vehiculos/{vehiculo}', [VehiculoController::class, 'show'])->name('vehiculos.show');
 
@@ -106,11 +109,14 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/pdf/procesar', [PDFController::class, 'procesarPdf'])->name('pdf.procesar');
 
+    // Ofertas
+    Route::resource('ofertas', App\Http\Controllers\OfertaController::class)->only(['index', 'show']);
+
     /*
-    |--------------------------------------------------------------------------
-    | 🔒 SOLO ADMIN puede gestionar departamentos, centros y roles
-    |--------------------------------------------------------------------------
-    */
+ |--------------------------------------------------------------------------
+ | 🔒 SOLO ADMIN puede gestionar departamentos, centros y roles
+ |--------------------------------------------------------------------------
+ */
     Route::middleware(['is_admin'])->group(function () {
         //Crud de roles
         Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
@@ -120,10 +126,11 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/roles/{role}', [RoleController::class, 'show'])->name('roles.show');
 
-        Route::get('/roles/{role}/edit', [RoleController::class,'edit'])->name('roles.edit');
+        Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
         Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
 
-        Route::delete('/roles/{role}', [RoleController::class,'destroy'])->name('roles.destroy');
+        Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
 
-    });
+    }
+    );
 });

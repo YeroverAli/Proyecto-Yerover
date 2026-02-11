@@ -24,12 +24,13 @@ class UpdateVehiculoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'chasis' => 'required|string|max:17',
+            'bastidor' => 'nullable|string|max:17',
+            'referencia' => 'nullable|string|max:255',
             'modelo' => 'required|string|max:255',
             'version' => 'required|string|max:255',
-            'color_externo' => 'required|string|max:255',
-            'color_interno' => 'required|string|max:255',
-            'empresa_id' => 'required|integer|exists:empresas,id',
+            'color_externo' => 'nullable|string|max:255',
+            'color_interno' => 'nullable|string|max:255',
+            'empresa_id' => 'required|exists:empresas,id',
         ];
     }
 }

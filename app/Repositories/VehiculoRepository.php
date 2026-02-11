@@ -11,14 +11,13 @@ class VehiculoRepository implements VehiculoRepositoryInterface
     {
         return Vehiculo::with(['empresa'])->simplePaginate(10);
     }
-    
+
     //Se encarga de buscar por todas las columnas para devolver un Vehiculo
     public function search(string $term)
     {
         return Vehiculo::with(['empresa'])
             ->where(function ($query) use ($term) {
-                $query->where('chasis', 'LIKE', "%{$term}%")
-                    ->orWhere('bastidor', 'LIKE', "%{$term}%")
+                $query->where('bastidor', 'LIKE', "%{$term}%")
                     ->orWhere('referencia', 'LIKE', "%{$term}%")
                     ->orWhere('modelo', 'LIKE', "%{$term}%")
                     ->orWhere('version', 'LIKE', "%{$term}%")

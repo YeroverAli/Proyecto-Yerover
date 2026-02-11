@@ -9,6 +9,9 @@ use App\Models\Vehiculo;
 use App\Repositories\VehiculoRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\VehiculosExport;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class VehiculoController extends Controller
 {
@@ -24,7 +27,7 @@ class VehiculoController extends Controller
     public function index(Request $request)
     {
         $this->authorize('viewAny', Vehiculo::class);
-        
+
         $vehiculos = $request->filled('search')
             ? $this->vehiculos->search($request->search)
             : $this->vehiculos->all();
@@ -55,17 +58,13 @@ class VehiculoController extends Controller
         try {
             $this->vehiculos->create($request->validated());
 
-            Log::info('Vehiculo creado correctamente', ['chasis' => $request->validated()['chasis']]);
-            
-            return redirect()->route('vehiculos.index')->with('success', 'Vehiculo creado correctamente');
-        }
+            Log::info('Vehiculo creado correctamente', ['bastidor' => $request->validated()['bastidor']]);
 
-        catch(\Illuminate\Database\QueryException $e){
+            return redirect()->route('vehiculos.index')->with('success', 'Vehiculo creado correctamente');
+        } catch (\Illuminate\Database\QueryException $e) {
             Log::error('Error al crear departametno (DB)', ['error' => $e->getMessage(), 'data' => $request->validated()]);
             return redirect()->back()->withInput()->with('error', 'Error al crear Vehiculo. Por favor, inténtalo de nuevo');
-        }
-
-        catch(\Exception $e){
+        } catch (\Exception $e) {
             Log::error('Error inesperado al crear Vehiculo', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return redirect()->back()->withInput()->with('error', 'Ha ocurrido un error inesperado. Por favor, contacta con el administrador');
         }
@@ -98,28 +97,24 @@ class VehiculoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-public function update(UpdateVehiculoRequest $request, Vehiculo $vehiculo)
-{
-    $this->authorize('update', $vehiculo);
-    
-    try {
-        $this->vehiculos->update($vehiculo->id, $request->validated());
+    public function update(UpdateVehiculoRequest $request, Vehiculo $vehiculo)
+    {
+        $this->authorize('update', $vehiculo);
 
-        Log::info('Vehiculo actualizado correctamente', ['chasis' => $request->validated()['chasis']]);
+        try {
+            $this->vehiculos->update($vehiculo->id, $request->validated());
 
-        return redirect()->route('vehiculos.index')->with('success', 'Vehiculo actualizado correctamente.');
+            Log::info('Vehiculo actualizado correctamente', ['bastidor' => $request->validated()['bastidor']]);
+
+            return redirect()->route('vehiculos.index')->with('success', 'Vehiculo actualizado correctamente.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error('Error al actualizar Vehiculo (BD)', ['error' => $e->getMessage(), 'data' => $request->validated()]);
+            return redirect()->back()->withInput()->with('error', 'Error al actualizar Vehiculo. Por favor, inténtalo de nuevo.');
+        } catch (\Exception $e) {
+            Log::error('Error inesperado al actualizar Vehiculo', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return redirect()->back()->withInput()->with('error', 'Ha ocurrido un error inesperado. Por favor, contacta con el administrador');
+        }
     }
-
-    catch(\Illuminate\Database\QueryException $e) {
-        Log::error('Error al actualizar Vehiculo (BD)', ['error' => $e->getMessage(), 'data' => $request->validated()]);
-        return redirect()->back()->withInput()->with('error', 'Error al actualizar Vehiculo. Por favor, inténtalo de nuevo.');
-    }
-
-    catch(\Exception $e){
-        Log::error('Error inesperado al actualizar Vehiculo', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-        return redirect()->back()->withInput()->with('error', 'Ha ocurrido un error inesperado. Por favor, contacta con el administrador');
-    }
-}
 
     /**
      * Remove the specified resource from storage.
@@ -127,22 +122,34 @@ public function update(UpdateVehiculoRequest $request, Vehiculo $vehiculo)
     public function destroy(Vehiculo $vehiculo)
     {
         $this->authorize('delete', $vehiculo);
-    
+
         try {
-    
+
             $this->vehiculos->delete($vehiculo->id);
-    
+
             return redirect()->route('vehiculos.index')->with('success', 'Vehiculo eliminado correctamente');
-                
+
         } catch (\Illuminate\Database\QueryException $e) {
-            Log::error('Error al eliminar Vehiculo (BD)', ['error' => $e->getMessage(),'Vehiculo_id' => $vehiculo->id,'chasis' => $vehiculo->chasis]);
-    
+            Log::error('Error al eliminar Vehiculo (BD)', ['error' => $e->getMessage(), 'Vehiculo_id' => $vehiculo->id, 'bastidor' => $vehiculo->bastidor]);
+
             return redirect()->back()->with('error', 'Error al eliminar el Vehiculo. Por favor, inténtalo de nuevo.');
-                
+
         } catch (\Exception $e) {
-            Log::error('Error inesperado al eliminar Vehiculo', ['error' => $e->getMessage(),'trace' => $e->getTraceAsString()]);
-    
+            Log::error('Error inesperado al eliminar Vehiculo', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
             return redirect()->back()->with('error', 'Ha ocurrido un error inesperado. Por favor, contacta con el administrador.');
         }
+    }
+
+    public function export()
+    {
+        return Excel::download(new VehiculosExport, 'vehiculos.xlsx');
+    }
+
+    public function exportPdf()
+    {
+        $vehiculos = Vehiculo::with('empresa')->get();
+        $pdf = Pdf::loadView('vehiculos.pdf', compact('vehiculos'));
+        return $pdf->download('vehiculos.pdf');
     }
 }

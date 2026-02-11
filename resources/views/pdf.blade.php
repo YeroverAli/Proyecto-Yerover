@@ -82,7 +82,8 @@
                                 <select name="modelo_pdf" id="modelo_pdf" class="form-select" required>
                                     <option value="">Selecciona el modelo</option>
                                     <option value="nsmit">NSMIT</option>
-                                    <option value="subida_ra">Subida Ratios (MA)</option>
+                                    <option value="subida_dacia">Subida Ratios (DACIA)</option>
+                                    <option value="subida_renault">Subida Ratios (RENAULT)</option>
                                 </select>
                             </div>
 
@@ -107,7 +108,7 @@
                                     @csrf
                                     <input type="hidden" name="text" value="{{ session('text') }}">
                                     <input type="hidden" name="modelo_pdf"
-                                        value="{{ session('modelo_pdf', old('modelo_pdf', 'nsmit')) }}">
+                                        value="{{ session('modelo_pdf', old('modelo_pdf', 'nsmit', 'subida_dacia', 'subida_renault')) }}">
 
                                     <button type="submit" class="btn btn-success">
                                         Procesar PDF

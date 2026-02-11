@@ -15,7 +15,7 @@ class ProcesarPdfRequest extends FormRequest
     {
         return [
             'text' => ['required', 'string'],
-            'modelo_pdf' => 'required|in:nsmit,subida_ra'
+            'modelo_pdf' => 'required|in:nsmit,subida_dacia,subida_renault'
         ];
     }
 }

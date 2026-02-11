@@ -6,8 +6,11 @@ use Carbon\Carbon;
 use App\Models\Cliente;
 use App\Models\Vehiculo;
 use App\Models\OfertaLinea;
+use App\Services\Contracts\OfertaPdfServiceInterface;
 
-class OfertaPdfNsmitService{
+
+class OfertaPdfNsmitService implements OfertaPdfServiceInterface
+{
     protected string $texto;
 
     public function __construct(string $texto)
@@ -376,7 +379,7 @@ class OfertaPdfNsmitService{
         if ($precio !== null) {
             OfertaLinea::create([
                 'oferta_cabecera_id' => $ofertaCabeceraId,
-                'tipo' => 'opcion',
+                'tipo' => 'Opcion',
                 'descripcion' => 'Pack Diseño',
                 'precio' => $precio,
             ]);
@@ -498,7 +501,7 @@ class OfertaPdfNsmitService{
 
             OfertaLinea::create([
                 'oferta_cabecera_id' => $ofertaCabeceraId,
-                'tipo' => 'descuento',
+                'tipo' => 'Promocion',
                 'descripcion' => $desc,
                 'precio' => $precio,
             ]);
@@ -548,7 +551,7 @@ class OfertaPdfNsmitService{
         if ($precio !== null) {
             OfertaLinea::create([
                 'oferta_cabecera_id' => $ofertaCabeceraId,
-                'tipo' => 'transporte',
+                'tipo' => 'Transporte',
                 'precio' => $precio,
             ]);
         }
@@ -601,7 +604,7 @@ class OfertaPdfNsmitService{
         if ($precio !== null) {
             OfertaLinea::create([
                 'oferta_cabecera_id' => $ofertaCabeceraId,
-                'tipo' => 'base',
+                'tipo' => 'Base',
                 'precio' => $precio,
             ]);
         }
@@ -656,7 +659,7 @@ class OfertaPdfNsmitService{
         if ($descripcion !== null && $precio !== null) {
             OfertaLinea::create([
                 'oferta_cabecera_id' => $ofertaCabeceraId,
-                'tipo' => 'igic',
+                'tipo' => 'IGIC',
                 'descripcion' => $descripcion,
                 'precio' => $precio,
             ]);
@@ -703,7 +706,7 @@ class OfertaPdfNsmitService{
         if ($descripcion !== null && $precio !== null) {
             OfertaLinea::create([
                 'oferta_cabecera_id' => $ofertaCabeceraId,
-                'tipo' => 'impuesto',
+                'tipo' => 'Impuesto',
                 'descripcion' => $descripcion,
                 'precio' => $precio,
             ]);
@@ -752,7 +755,7 @@ class OfertaPdfNsmitService{
         if ($precio !== null) {
             OfertaLinea::create([
                 'oferta_cabecera_id' => $ofertaCabeceraId,
-                'tipo' => 'subtotal',
+                'tipo' => 'Subtotal',
                 'precio' => $precio,
             ]);
         }
@@ -807,7 +810,7 @@ class OfertaPdfNsmitService{
         if ($descripcion !== null && $precio !== null) {
             OfertaLinea::create([
                 'oferta_cabecera_id' => $ofertaCabeceraId,
-                'tipo' => 'gasto',
+                'tipo' => 'Gasto',
                 'descripcion' => $descripcion,
                 'precio' => $precio,
             ]);
@@ -850,14 +853,140 @@ class OfertaPdfNsmitService{
         if ($precio !== null) {
             OfertaLinea::create([
                 'oferta_cabecera_id' => $ofertaCabeceraId,
-                'tipo' => 'total',
+                'tipo' => 'Total',
                 'precio' => $precio,
             ]);
         }
     }
 
+    public function extraerMantenimiento(int $ofertaCabeceraId): void
+    {
+        $lineas = array_values(array_filter(
+            array_map('trim', explode("\n", $this->texto))
+        ));
 
+        $capturando = false;
+        $descripcion = null;
+        $precio = null;
 
+        foreach ($lineas as $linea) {
 
+            // 1. Detectar inicio Mantenimiento
+            if ($linea === 'Mantenimiento') {
+                $capturando = true;
+                continue;
+            }
 
+            if (!$capturando) {
+                continue;
+            }
+
+            // 2. Si aún no hay descripción, buscar la primera línea NO precio
+            if ($descripcion === null) {
+                // Si la línea parece un precio, la ignoramos (aunque raro)
+                if (preg_match('/\d{1,3}(\.\d{3})*,\d{2}\s*€/', $linea)) {
+                    continue;
+                }
+                $descripcion = $linea;
+                continue;
+            }
+
+            // 3. Capturar el precio
+            if (preg_match('/\d{1,3}(\.\d{3})*,\d{2}\s*€/', $linea)) {
+
+                $raw = str_replace(['€', ' '], '', $linea);
+                $raw = str_replace('.', '', $raw);
+                $raw = str_replace(',', '.', $raw);
+
+                $precio = (float)$raw;
+                break;
+            }
+        }
+
+        if ($descripcion !== null && $precio !== null) {
+            OfertaLinea::create([
+                'oferta_cabecera_id' => $ofertaCabeceraId,
+                'tipo' => 'Mantenimiento',
+                'descripcion' => $descripcion,
+                'precio' => $precio,
+            ]);
+        }
+    }
+
+    public function extraerOtros(int $ofertaCabeceraId): void
+    {
+        $lineas = array_values(array_filter(
+            array_map('trim', explode("\n", $this->texto))
+        ));
+
+        $capturando = false;
+        $descripcion = null;
+        $precio = null;
+
+        foreach ($lineas as $linea) {
+
+            // 1. Detectar inicio Otros
+            if ($linea === 'Otros') {
+                $capturando = true;
+                continue;
+            }
+
+            // Stop at TOTAL
+            if ($capturando && $linea === 'TOTAL') {
+                break;
+            }
+
+            if (!$capturando) {
+                continue;
+            }
+
+            // 2. Si aún no hay descripción, buscar la primera línea NO precio
+            if ($descripcion === null) {
+                if (preg_match('/\d{1,3}(\.\d{3})*,\d{2}\s*€/', $linea)) {
+                    continue;
+                }
+                $descripcion = $linea;
+                continue;
+            }
+
+            // 3. Capturar el precio
+            if (preg_match('/\d{1,3}(\.\d{3})*,\d{2}\s*€/', $linea)) {
+
+                $raw = str_replace(['€', ' '], '', $linea);
+                $raw = str_replace('.', '', $raw);
+                $raw = str_replace(',', '.', $raw);
+
+                $precio = (float)$raw;
+                break;
+            }
+        }
+
+        if ($descripcion !== null && $precio !== null) {
+            OfertaLinea::create([
+                'oferta_cabecera_id' => $ofertaCabeceraId,
+                'tipo' => 'Otros',
+                'descripcion' => $descripcion,
+                'precio' => $precio,
+            ]);
+        }
+    }
+
+    public function procesarOferta(int $id): void
+    {
+        // Empieza simple, como dijiste
+        $this->extraerModeloInteres($id);
+        $this->extraerNissanAssistance($id);
+        $this->extraerPackDiseno($id);
+        $this->extraerPinturaInterior($id);
+        $this->extraerDescuentos($id);
+        $this->extraerTransporte($id);
+        $this->extraerBase($id);
+        $this->extraerIgic($id);
+        $this->extraerImpuesto($id);
+        $this->extraerSubtotal($id);
+        $this->extraerGastos($id);
+        $this->extraerMantenimiento($id);
+        $this->extraerOtros($id);
+        $this->extraerTotal($id);
+    }
 }

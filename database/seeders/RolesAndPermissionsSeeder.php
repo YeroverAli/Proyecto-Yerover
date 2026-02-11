@@ -50,6 +50,12 @@ app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
         Permission::create(['name'=> 'editar vehiculos']);
         Permission::create(['name'=> 'eliminar vehiculos']);
 
+        // Permisos de ofertas
+        Permission::create(['name'=> 'ver pdf']);
+        Permission::create(['name'=> 'crear pdf']);
+        Permission::create(['name'=> 'editar pdf']);
+        Permission::create(['name'=> 'eliminar pdf']);
+
         // Roles
         $admin = Role::create(['name' => 'admin']);
         $user = Role::create(['name' => 'user']);

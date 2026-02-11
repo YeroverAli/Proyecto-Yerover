@@ -8,12 +8,13 @@ use App\Http\Requests\ProcesarPdfRequest;
 use App\Models\OfertaCabecera;
 use App\Services\OfertaPdfService;
 use DB;
-
+use App\Services\Contracts\OfertaPdfServiceInterface;
+use App\Services\OfertaPdfNsmitService;
+use App\Services\OfertaPdfSubidaRenaultService;
+use App\Services\OfertaPdfSubidaDaciaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
-use App\Services\OfertaPdfNsmitService;
-use App\Services\OfertaPdfSubidaRaService;
 use Spatie\PdfToText\Pdf;
 
 final class PDFController extends Controller
@@ -56,8 +57,7 @@ final class PDFController extends Controller
                 'modelo_pdf' => $request->input('modelo_pdf'),
             ]);
 
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             Log::error('Error al subir PDF', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -71,66 +71,40 @@ final class PDFController extends Controller
 
     public function procesarPdf(ProcesarPdfRequest $request)
     {
-        try {
-            DB::beginTransaction();
+        DB::beginTransaction();
 
+        try {
             $texto = $request->input('text');
 
-            // 1. Elegir el servicio según el modelo de PDF
-            switch ($request->modelo_pdf) {
-                case 'nsmit':
-                    $servicio = new OfertaPdfNsmitService($texto);
-                    break;
+            /** @var OfertaPdfServiceInterface $servicio */
+            $servicio = match ($request->modelo_pdf) {
+                'nsmit' => new OfertaPdfNsmitService($texto),
+                'subida_dacia' => new OfertaPdfSubidaDaciaService($texto),
+                'subida_renault' => new OfertaPdfSubidaRenaultService($texto),
+                default => throw new \Exception('Modelo de PDF no soportado'),
+            };
 
-                case 'subida_ra':
-                    $servicio = new OfertaPdfSubidaRaService($texto);
-                    break;
-
-                default:
-                    throw new \Exception('Modelo de PDF no soportado');
-            }
-
-            // 2. Extraer datos básicos
             $cliente = $servicio->extraerCliente();
             $vehiculo = $servicio->extraerVehiculo();
-            $fecha = $servicio->extraerFechaPedido();
 
-            // 3. Crear la oferta cabecera
             $oferta = OfertaCabecera::create([
                 'cliente_id' => $cliente->id,
                 'vehiculo_id' => $vehiculo->id,
-                'fecha' => $fecha,
+                'fecha' => now(), // Use current upload timestamp
             ]);
 
-            // 4. Extraer líneas económicas
-            $servicio->extraerModeloInteres($oferta->id);
-            $servicio->extraerNissanAssistance($oferta->id);
-            $servicio->extraerPackDiseno($oferta->id);
-            $servicio->extraerPinturaInterior($oferta->id);
-            $servicio->extraerDescuentos($oferta->id);
-            $servicio->extraerTransporte($oferta->id);
-            $servicio->extraerBase($oferta->id);
-            $servicio->extraerIgic($oferta->id);
-            $servicio->extraerImpuesto($oferta->id);
-            $servicio->extraerSubtotal($oferta->id);
-            $servicio->extraerGastos($oferta->id);
-            $servicio->extraerTotal($oferta->id);
+            // 🔥 UNA sola llamada
+            $servicio->procesarOferta($oferta->id);
 
             DB::commit();
 
-            return redirect()
-                ->back()
-                ->with('success', 'Oferta guardada correctamente.');
-
-        }
-        catch (\Throwable $e) {
-
+            return back()->with('success', 'Oferta guardada correctamente');
+        } catch (\Throwable $e) {
             DB::rollBack();
 
-            return redirect()
-                ->back()
-                ->with('error', 'Error al procesar el PDF: ' . $e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
+
 
 }

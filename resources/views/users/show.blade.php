@@ -83,7 +83,8 @@
                                     <tr>
                                         <td class="fw-bold">Departamento:</td>
                                         <td>
-                                            <span class="badge bg-secondary">{{ $user->departamento->nombre ?? 'N/A' }}</span>
+                                            <span class="badge bg-secondary">{{ $user->departamento->nombre ?? 'N/A'
+                                                }}</span>
                                         </td>
                                     </tr>
                                     <tr>
@@ -109,11 +110,11 @@
                                         <td class="fw-bold" style="width: 30%;">Roles:</td>
                                         <td>
                                             @if($user->roles->count() > 0)
-                                                @foreach($user->roles as $role)
-                                                    <span class="badge bg-primary me-1">{{ $role->name }}</span>
-                                                @endforeach
+                                            @foreach($user->roles as $role)
+                                            <span class="badge bg-primary me-1">{{ $role->name }}</span>
+                                            @endforeach
                                             @else
-                                                <span class="text-muted">Sin roles asignados</span>
+                                            <span class="text-muted">Sin roles asignados</span>
                                             @endif
                                         </td>
                                     </tr>
@@ -134,14 +135,16 @@
                                         <td class="fw-bold" style="width: 30%;">Fecha de creación:</td>
                                         <td>
                                             <i class="bi bi-calendar"></i> {{ $user->created_at->format('d/m/Y') }}
-                                            <small class="text-muted">a las {{ $user->created_at->format('H:i') }}</small>
+                                            <small class="text-muted">a las {{ $user->created_at->format('H:i')
+                                                }}</small>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td class="fw-bold">Última actualización:</td>
                                         <td>
                                             <i class="bi bi-clock"></i> {{ $user->updated_at->format('d/m/Y') }}
-                                            <small class="text-muted">a las {{ $user->updated_at->format('H:i') }}</small>
+                                            <small class="text-muted">a las {{ $user->updated_at->format('H:i')
+                                                }}</small>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -156,9 +159,9 @@
                         </a>
                         <div>
                             @can('update', $user)
-                                <a href="{{ route('users.edit', $user) }}" class="btn btn-warning">
-                                    <i class="bi bi-pencil"></i> Editar
-                                </a>
+                            <a href="{{ route('users.edit', $user) }}" class="btn btn-warning">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
                             @endcan
                         </div>
                     </div>
